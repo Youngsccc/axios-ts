@@ -1,21 +1,41 @@
-import { AxiaosRequestConfig } from "./types";
-import xhr from "./xhr";
-import { buildURL } from "./utils/url";
+import { AxiosPromise, AxiosRequestConfig, AxiosResponse } from './types'
+import xhr from './xhr'
+import { buildURL } from './utils/url'
+import { transformRequest, transformResponse } from './utils/data'
+import { processHeaders } from './utils/header'
 
-function axios(config: AxiaosRequestConfig): void {
+function axios(config: AxiosRequestConfig): AxiosPromise {
   // 函数参数处理
-  processConfig(config);
+  processConfig(config)
   // 请求发起
-  xhr(config);
+  return xhr(config).then(response => {
+    return transformResponseData(response)
+  })
 }
 
-function processConfig(config: AxiaosRequestConfig): void {
-  config.url = transformURL(config);
+function processConfig(config: AxiosRequestConfig): void {
+  config.url = transformURL(config)
+  config.headers = transformHeaders(config)
+  config.data = transformRequestData(config)
 }
 
-function transformURL(config: AxiaosRequestConfig): string {
-  const { url, params } = config;
-  return buildURL(url, params);
+function transformURL(config: AxiosRequestConfig): string {
+  const { url, params } = config
+  return buildURL(url, params)
 }
 
-export default axios;
+function transformRequestData(config: AxiosRequestConfig): any {
+  return transformRequest(config.data)
+}
+
+function transformHeaders(config: AxiosRequestConfig): any {
+  const { headers = {}, data } = config
+  return processHeaders(headers, data)
+}
+
+function transformResponseData(response: AxiosResponse): AxiosResponse {
+  response.data = transformResponse(response.data)
+  return response
+}
+
+export default axios
